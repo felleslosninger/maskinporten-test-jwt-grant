@@ -7,20 +7,22 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jose.util.Base64;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class JwtGrantGeneratorService {
 
+    private final JwtKeystore jwtKeystore;
     public String makeJwt(String issuer, String audience, String scope) throws Exception {
 
-        Configuration config = Configuration.load();
 
         List<Base64> certChain = new ArrayList<>();
-        certChain.add(Base64.encode(config.getCertificate().getEncoded()));
+        certChain.add(Base64.encode(jwtKeystore.getCertificate().getEncoded()));
 
         JWSHeader jwtHeader = new JWSHeader.Builder(JWSAlgorithm.RS256)
 				.x509CertChain(certChain)
@@ -35,7 +37,7 @@ public class JwtGrantGeneratorService {
                 .expirationTime(new Date(Clock.systemUTC().millis() + 120000)) // Expiration time is 120 sec.
                 .build();
 
-        JWSSigner signer = new RSASSASigner(config.getPrivateKey());
+        JWSSigner signer = new RSASSASigner(jwtKeystore.getPrivateKey());
         SignedJWT signedJWT = new SignedJWT(jwtHeader, claims);
         signedJWT.sign(signer);
 
